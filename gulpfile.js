@@ -7,9 +7,8 @@ const terser = require('gulp-terser');
 const del = require('del');
 const imagemin = require('gulp-imagemin');
 const browserSync = require('browser-sync').create();
-
-
-
+const htmlreplace = require('gulp-html-replace');
+const htmlmin = require('gulp-htmlmin');
 const cssFiles = ['./src/css/styles.css', './src/css/animate.css'];
 
 const jsFiles = [
@@ -65,18 +64,30 @@ function images() {
 function watch() {
   browserSync.init({
     server: {
-      baseDir: "./"
+      baseDir: "./build"
     }
   });
   gulp.watch('./src/css/**/*.css', styles)
   gulp.watch('./src/js/**/*.js', scripts)
   gulp.watch('./src/img/**/*', images)
-  gulp.watch("./*.html").on('change', browserSync.reload);
+  gulp.watch('./src/*.html', htmlWork)
+  gulp.watch("./build/*.html").on('change', browserSync.reload);
+}
+
+function htmlWork() {
+  return gulp.src("src/index.html")
+    .pipe(htmlreplace({
+      'cssChange': 'css/styles.css',
+      'jsChange': 'js/scripts.js'
+    }))
+    .pipe(htmlmin({ collapseWhitespace: true }))
+    .pipe(gulp.dest('./build'));
 }
 
 gulp.task('clean', clean);
 gulp.task('copy', copy);
 gulp.task('images', images);
+gulp.task("htmlWork", htmlWork);
 gulp.task('styles', styles);
 gulp.task('scripts', scripts);
 gulp.task('watch', watch);
@@ -85,7 +96,8 @@ gulp.task('build',
   gulp.series(
     clean,
     gulp.parallel(copy, images),
-    gulp.parallel(styles, scripts)
+    gulp.parallel(styles, scripts),
+    htmlWork
     )
 )
 
